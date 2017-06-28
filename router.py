@@ -8,6 +8,8 @@ from flask_digest.hasher import hash_all
 from core import Controller, Email
 from core import generator, database
 
+from time import time
+
 #----------------------------------CONFIG---------------------------------------
 
 app = Flask(__name__)
@@ -25,7 +27,7 @@ app.config.update(
     MAX_CONTENT_LENGTH = 1024 * 1024,
     DEBUG = True,
 
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///garupa.db',
+    SQLALCHEMY_DATABASE_URI = 'mysql://destroctor51:garupa.com@destroctor51.mysql.pythonanywhere-services.com/destroctor51$garupa',
     SQLALCHEMY_TRACK_MODIFICATIONS = False,
     SQLALCHEMY_POOL_RECYCLE = 280
 )
@@ -244,6 +246,8 @@ def cancel_ride(uid, rid):
 @app.route('/api/rides', methods=['GET'])
 @stomach.protect
 def search_ride():
+    t0 = time()
+
     try:
         page = request.args.get('page', 1)
         limit = request.args.get('limit', 10)
@@ -261,11 +265,13 @@ def search_ride():
     except:
         return BAD_REQUEST
 
-    result = controller.search_rides(dest, district, date, weekly, logged_user())
+    result, bd_time = controller.search_rides(dest, district, date, weekly, logged_user())
 
     return json.dumps({
         'results': result[(page-1)*limit:page*limit],
-        'pages': (len(result) + limit - 1) / limit
+        'pages': (len(result) + limit - 1) / limit,
+        'total_time': time()-t0,
+        'bd_tim': bd_time
     })
 
 #-----------------------------------MAIN----------------------------------------

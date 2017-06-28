@@ -2,6 +2,7 @@ import notifications
 from elements import User, Ride, Passenger
 from datetime import datetime
 from database import db
+from time import time
 
 class Controller(object):
 
@@ -198,7 +199,11 @@ class Controller(object):
 
         self.update_rides()
 
-        result = [r for r in Ride.query.all() if
+        t0 = time()
+        rides = Ride.query.all()
+        t1 = time()
+
+        result = [r for r in rides if
             r.get_destination() == dest and
             district in r.get_route() and
             r.happens_on(date) and
@@ -206,4 +211,4 @@ class Controller(object):
             not r.contains_user(u)
         ]
 
-        return [r.get_view() for r in result]
+        return [r.get_view() for r in result], t1-t0
