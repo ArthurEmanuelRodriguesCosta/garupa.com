@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from client import *
 from random import choice, randint
-import time
+from time import time
 
-auth = Authenticator('http://destroctor51.pythonanywhere.com', '114110495', '12345')
+from client import Authenticator
+from requests import request
+
+base_url = 'http://localhost:8000'
+#base_url = 'http://destroctor51.pythonanywhere.com'
 
 bairros = [
     'Acácio Figueiredo', 'Alto Branco', 'Bairro das Cidades', 'Bela Vista',
@@ -19,10 +22,28 @@ bairros = [
     'Quarenta', 'Ramadinha', 'Sandra Cavalcante', 'Santa Cruz', 'Santa Rosa',
     'Santa Terezinha', 'Santo Antônio', 'São José', 'São José da Mata',
     'Serrotão', 'Sítio Estreito', 'Sítio Lucas', 'Tambor', 'Três Irmãs',
-    'Universitário', 'Velame', 'Vila Cabral']
+    'Universitário', 'Velame', 'Vila Cabral'
+]
 
 weekly = [True, False]
 
+def clear_database():
+    r = request('DELETE', base_url+'/api')
+    print r.text
+
+def create_user(uid=114110000):
+    r = request('POST', base_url+'/api/users', json={
+        'uid': uid,
+        'passwd': '12345',
+        'name': 'default',
+        'email': 'default@email.com'
+    })
+
+    if r.status_code is 200:
+        return Authenticator(base_url, uid, '12345')
+    return None
+
+'''
 for i in range(100):
     r = auth.request('POST', '/api/rides', json={
         'dest': 'UFCG',
@@ -34,4 +55,4 @@ for i in range(100):
     })
 
     print i, r.text
-
+'''

@@ -27,7 +27,9 @@ app.config.update(
     MAX_CONTENT_LENGTH = 1024 * 1024,
     DEBUG = True,
 
-    SQLALCHEMY_DATABASE_URI = 'mysql://destroctor51:garupa.com@destroctor51.mysql.pythonanywhere-services.com/destroctor51$garupa',
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///garupa.db',
+    #SQLALCHEMY_DATABASE_URI = 'mysql://destroctor51:garupa.com@destroctor51.mysql.pythonanywhere-services.com/destroctor51$garupa',
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False,
     SQLALCHEMY_POOL_RECYCLE = 280
 )
@@ -87,6 +89,13 @@ def logged_user():
     return int(request.authorization.username)
 
 #------------------------------------API----------------------------------------
+
+@app.route('/api', methods=['DELETE'])
+def clear_database():
+    with app.app_context():
+        database.db.drop_all()
+        database.db.create_all()
+    return UPDATED
 
 @app.route('/api/users', methods=['POST'])
 def register_user():

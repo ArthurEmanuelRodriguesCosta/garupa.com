@@ -1,5 +1,4 @@
 from core.database import db
-from sqlalchemy.dialects.mysql import MEDIUMBLOB
 
 friendship = db.Table('friendship',
     db.Column('uid_a', db.Integer, db.ForeignKey('user.uid')),
@@ -20,7 +19,7 @@ class User(db.Model):
     _email = db.Column(db.String(30))
     _phone = db.Column(db.String(30))
 
-    _photo = db.Column(MEDIUMBLOB)
+    _photo = db.Column(db.BLOB)
 
     _friends = db.relationship('User',
         secondary='friendship',
