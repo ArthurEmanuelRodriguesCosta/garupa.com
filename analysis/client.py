@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 
 from hashlib import md5
@@ -7,14 +5,16 @@ from os import urandom
 from requests import request
 from urllib import urlencode
 
-class Authenticator(object):
+base_url = 'http://localhost:8000'
+#base_url = 'http://destroctor51.pythonanywhere.com'
+
+class Auth(object):
 	realm = None
 	nonce = None
 	cnonce = None
 	nc = 0
 
-	def __init__(self, base_url, user, passwd):
-		self.base_url = base_url
+	def __init__(self, user, passwd):
 		self.user = user
 		self.passwd = passwd
 
@@ -53,7 +53,7 @@ class Authenticator(object):
 		headers = self.make_header(method, url, params)
 		self.nc += 1
 
-		r = request(method, self.base_url+url, headers=headers, params=params, json=json)
+		r = request(method, base_url+url, headers=headers, params=params, json=json)
 
 		if r.status_code is 200:
 			return r
@@ -71,3 +71,18 @@ class Authenticator(object):
 
 		if stale and stale.group(1) == 'true' or headers == None:
 			return self.request(method, url, params, json)
+
+def clear_database():
+    request('DELETE', base_url+'/api')
+
+def create_user(uid):
+    r = request('POST', base_url+'/api/users', json={
+        'uid': uid,
+        'passwd': 'default',
+        'name': 'default',
+        'email': 'default@mail.com'
+    })
+
+    if r.status_code is 200:
+        return Auth(uid, 'default')
+    return None
