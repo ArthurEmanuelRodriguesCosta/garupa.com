@@ -36,6 +36,3 @@ app.constant('Districts', [
     'Serrotão', 'Sítio Estreito', 'Sítio Lucas', 'Tambor', 'Três Irmãs',
     'Universitário', 'Velame', 'Vila Cabral'
 ]);
-
-
-
