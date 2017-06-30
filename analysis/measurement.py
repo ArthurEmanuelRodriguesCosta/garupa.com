@@ -100,6 +100,8 @@ class Search(Thread):
             ))
 
 def execute(threads, w=50):
+    i= 0
+    j= -1
     for i in xrange(len(threads)/w):
         for j in xrange(w):
             threads[w*i+j].start()
