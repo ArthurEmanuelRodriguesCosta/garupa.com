@@ -124,6 +124,11 @@ def view_user(uid):
     if view == None: return NOT_FOUND
     return json.dumps(view)
 
+@app.route('/api/users/<int:uid>', methods=['DELETE'])
+def remove_user(uid):
+    controller.remove_user(uid)
+    return UPDATED
+
 @app.route('/api/users/<int:uid>/<string:attr>', methods=['PUT'])
 @stomach.protect
 def update_user(uid, attr):
@@ -279,8 +284,8 @@ def search_ride():
     return json.dumps({
         'results': result[(page-1)*limit:page*limit],
         'pages': (len(result) + limit - 1) / limit,
-        'total_time': time()-t0,
-        'bd_tim': bd_time
+        'process_time': time()-t0,
+        'bd_time': bd_time
     })
 
 #-----------------------------------MAIN----------------------------------------

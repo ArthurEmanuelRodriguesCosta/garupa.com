@@ -3,6 +3,8 @@ import re
 from hashlib import md5
 from os import urandom
 from requests import request
+from threading import Lock
+from time import time
 from urllib import urlencode
 
 base_url = 'http://localhost:8000'
@@ -13,6 +15,8 @@ class Auth(object):
 	nonce = None
 	cnonce = None
 	nc = 0
+
+	lock = Lock()
 
 	def __init__(self, user, passwd):
 		self.user = user
@@ -50,32 +54,39 @@ class Auth(object):
 		}
 
 	def request(self, method, url, params=None, json=None):
-		headers = self.make_header(method, url, params)
-		self.nc += 1
 
+		with self.lock:
+			headers = self.make_header(method, url, params)
+			self.nc += 1
+
+		t0 = time()
 		r = request(method, base_url+url, headers=headers, params=params, json=json)
+		t1 = time()
 
-		if r.status_code is 200:
-			return r
+		auth = r.headers.get('WWW-Authenticate')
 
-		auth = r.headers['WWW-Authenticate']
+		if r.status_code != 401 or auth == None:
+			return r, t1-t0
 
 		realm = re.search('realm="(.*?)"', auth)
 		nonce = re.search('nonce="(.*?)"', auth)
-		stale = re.search('stale="(.*?)"', auth)
+		stale = re.search('stale=([^ ]*)', auth)
 
-		self.realm = realm.group(1)
-		self.nonce = nonce.group(1)
-		self.cnonce = self.gen_nonce()
-		self.nc = 1
+		with self.lock:
+			self.realm = realm.group(1)
+			self.nonce = nonce.group(1)
+			self.cnonce = self.gen_nonce()
+			self.nc = 1
 
-		if stale and stale.group(1) == 'true' or headers == None:
+		if stale and stale.group(1) == 'TRUE' or headers == None:
 			return self.request(method, url, params, json)
 
 def clear_database():
     request('DELETE', base_url+'/api')
 
 def create_user(uid):
+    request('DELETE', base_url+'/api/users/%d' % uid)
+
     r = request('POST', base_url+'/api/users', json={
         'uid': uid,
         'passwd': 'default',

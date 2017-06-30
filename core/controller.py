@@ -59,6 +59,12 @@ class Controller(object):
 
         return True
 
+    def remove_user(self, uid):
+        u = self.get_user(uid)
+
+        db.session.delete(u)
+        db.session.commit()
+
     def add_friend(self, uid, fuid):
         u = self.get_user(uid)
         f = self.get_user(fuid)

@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from random import choice, randint, sample
-from time import time
+from sys import stdout
+from threading import Thread, Lock
 
 from client import *
+
 
 district = [
     'Acácio Figueiredo', 'Alto Branco', 'Bairro das Cidades', 'Bela Vista',
@@ -24,6 +26,7 @@ district = [
 dest = ['UFCG', 'HOME']
 weekly = [True, False]
 date = [1498800000000, 1498900000000]
+
 
 def gen_query(limit=10):
     return {
@@ -54,18 +57,103 @@ def gen_ride(query=None):
         'weekly': query['weekly']
     }
 
-clear_database()
 
-user1 = create_user(114110000)
-user2 = create_user(114110001)
+output = open('out.csv', 'w')
+output.write('queries,results,rides,net_time,process_time,bd_time\n')
+lock = Lock()
 
-query = gen_query()
+def write(string):
+    with lock:
+        output.write(string)
 
-ride1 = gen_ride()
-ride2 = gen_ride(query)
 
-r = user1.request('POST', '/api/rides', json=ride1)
-r = user1.request('POST', '/api/rides', json=ride2)
+class Register(Thread):
+    def __init__(self, user, ride):
+        Thread.__init__(self)
+        self.user = user
+        self.ride = ride
 
-r = user2.request('GET', '/api/rides', params=query)
-print r.json()
+    def run(self):
+        r, delta = self.user.request('POST', '/api/rides', json=self.ride)
+        stdout.write('.' if r.status_code is 200 else 'x')
+
+class Search(Thread):
+    def __init__(self, user, query, queries, results, rides):
+        Thread.__init__(self)
+        self.user = user
+        self.query = query
+
+        self.queries = queries
+        self.results = results
+        self.rides = rides
+
+    def run(self):
+        r, delta = self.user.request('GET', '/api/rides', params=self.query)
+        stdout.write('.' if r.status_code is 200 else 'x')
+
+        if r.status_code == 200:
+            json = r.json()
+
+            write('%d,%d,%d,%s,%s,%s\n' % (
+                self.queries, self.results, self.rides,
+                str(delta), str(json['process_time']), str(json['bd_time'])
+            ))
+
+def execute(threads, w=50):
+    for i in xrange(len(threads)/w):
+        for j in xrange(w):
+            threads[w*i+j].start()
+        for j in xrange(w):
+            threads[w*i+j].join()
+    for k in xrange(w*i+j+1, len(threads)):
+        threads[k].start()
+    for k in xrange(w*i+j+1, len(threads)):
+        threads[k].join()
+
+
+def run_experiment(queries, results, rides):
+
+    driver = create_user(114110000)
+    passenger = create_user(114110001)
+
+    query = gen_query(results)
+
+    stdout.write('rides ')
+    threads = []
+
+    for i in xrange(results):
+        ride = gen_ride(query)
+        t = Register(driver, ride)
+        threads.append(t)
+
+    for i in xrange(rides-results):
+        ride = gen_ride()
+        t = Register(driver, ride)
+        threads.append(t)
+
+    execute(threads)
+    stdout.write('\n')
+
+    stdout.write('queries ')
+    threads = []
+
+    for i in xrange(queries):
+        t = Search(passenger, query, queries, results, rides)
+        threads.append(t)
+
+    execute(threads)
+    stdout.write('\n')
+
+def repeat_experiment(queries, results, rides):
+    for i in xrange(100):
+        run_experiment(queries, results, rides)
+
+
+repeat_experiment(1, 10, 100)
+repeat_experiment(1, 10, 1000)
+repeat_experiment(1, 100, 100)
+repeat_experiment(1, 100, 1000)
+repeat_experiment(200, 10, 100)
+repeat_experiment(200, 10, 1000)
+repeat_experiment(200, 100, 100)
+repeat_experiment(200, 100, 1000)
