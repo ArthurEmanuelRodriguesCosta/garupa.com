@@ -7,8 +7,8 @@ from threading import Lock
 from time import time
 from urllib import urlencode
 
-base_url = 'http://localhost:8000'
-#base_url = 'http://destroctor51.pythonanywhere.com'
+#base_url = 'http://localhost:8000'
+base_url = 'http://destroctor51.pythonanywhere.com'
 
 class Auth(object):
 	realm = None
@@ -85,8 +85,6 @@ def clear_database():
     request('DELETE', base_url+'/api')
 
 def create_user(uid):
-    request('DELETE', base_url+'/api/users/%d' % uid)
-
     r = request('POST', base_url+'/api/users', json={
         'uid': uid,
         'passwd': 'default',

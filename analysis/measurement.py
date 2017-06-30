@@ -114,6 +114,7 @@ def execute(threads, w=50):
 
 
 def run_experiment(queries, results, rides):
+    clear_database()
 
     driver = create_user(114110000)
     passenger = create_user(114110001)
@@ -146,16 +147,16 @@ def run_experiment(queries, results, rides):
     execute(threads)
     stdout.write('\n')
 
-def repeat_experiment(queries, results, rides):
-    for i in xrange(100):
+def repeat_experiment(queries, results, rides, reps=1):
+    for i in xrange(reps):
         run_experiment(queries, results, rides)
 
 
-repeat_experiment(1, 10, 100)
-repeat_experiment(1, 10, 1000)
-repeat_experiment(1, 100, 100)
-repeat_experiment(1, 100, 1000)
-repeat_experiment(200, 10, 100)
-repeat_experiment(200, 10, 1000)
-repeat_experiment(200, 100, 100)
-repeat_experiment(200, 100, 1000)
+repeat_experiment(1, 10, 100, 50)
+repeat_experiment(1, 10, 1000, 50)
+repeat_experiment(1, 100, 100, 50)
+repeat_experiment(1, 100, 1000, 50)
+repeat_experiment(200, 10, 100, 1)
+repeat_experiment(200, 10, 1000, 1)
+repeat_experiment(200, 100, 100, 1)
+repeat_experiment(200, 100, 1000, 1)
