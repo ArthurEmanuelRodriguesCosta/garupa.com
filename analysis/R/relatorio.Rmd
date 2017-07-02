@@ -1,0 +1,136 @@
+---
+title: "Relatório ADSD - Projeto de medição"
+author: "Arthur Emanuel, Arthur Vinícius e Victor Andrade"
+date: "2 de julho de 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(ggplot2)
+
+d <- read.csv("out.csv")
+
+d <- d %>% mutate(real_net_time = (net_time - bd_time) - process_time, group = queries + results + rides)
+
+```
+
+## O objetivo
+
+Obter estatísticas que descrevam o comportamento do sistema "garupa.com" em contextos diferentes. E, dessa forma, encontrar pontos de melhoria no seu desempenho.
+
+## Sobre os dados
+
+Para que seja possível uma compreensão dos dados sem ter que voltar para o planejamento do projeto de medição, este grupo escolheu as métricas: tempo de rede, tempo de processamento e tempo de acesso ao banco de dados. Além disso, existem 3 fatores, com seus respectivos níveis: quantidade de requisições feitas em conjunto(1, 200), quantidade de caronas criadas(100, 1000) e quantidade de respostas desejadas(10, 100).
+
+Vale salientar que o fator "quantidade de requsições feitas em conjunto" não foi simulado de forma totalmente condizente com a realidade. Houve a limitação de que a coleta foi feita a partir de um computador e, com isso, não era possível fazer essa quantidade de requisições simultaneamente. Além disso, a API do sistema não aguenta 200 requisições em conjunto (devido ao framework utilizado), por isso as requisições foram enviadas de 50 em 50.
+
+Os dados possuem um total de 1000 observações. Ademais, fazendo-se a separação por combinações de níveis de fatores, temos as seguintes quantidades de observações, para cada combinação:
+
+```{r echo=FALSE}
+a <- d %>% group_by(queries, results, rides) %>% 
+              summarise(quantity = length(net_time))
+a
+```
+
+## Um olhar geral
+
+Para termos uma ideia do desempenho do sistema de forma geral, pode-se calcular algumas estatísticas das variáveis escolhidas como métricas. Com isso, pode-se ter uma ideia do desempenho do sistema.
+
+Abaixo estão as médias e seus respectivos desvios padrões de cada tempo de resposta:
+
+1) Tempo de rede
+```{r echo=FALSE}
+mean(d$real_net_time)
+sd(d$real_net_time)
+```
+2) Tempo de processamento
+```{r echo=FALSE}
+mean(d$process_time)
+sd(d$process_time)
+```
+3) Tempo de banco de dados
+```{r echo=FALSE}
+mean(d$bd_time)
+sd(d$bd_time)
+```
+
+Dessa forma, observa-se que o tempo de maior duração, em média, é o de rede.
+
+De posse desses dados, pode-se calcular o intervalo de confiança (com 95% de confiança) para cada uma das métricas:
+
+1) Tempo de rede
+```{r}
+t.test(d$real_net_time)
+```
+2) Tempo de processamento
+```{r}
+t.test(d$process_time)
+```
+3) Tempo de banco de dados
+```{r}
+t.test(d$bd_time)
+```
+
+Logo, com 95% de confiança, pode-se afimar que os valores do tempo de rede, em segundos, estarão em [2.094862, 2.303014]. A conclusão se dá de forma análoga em Tempo de processamento e Tempo de banco de dados. A partir desse instante, toda vez que o intervalo de confiança for mencionado, este será para a média, com 95% de confiança.
+
+# Um olhar por grupos
+
+## Tempo de rede
+
+Na sessão anterior, constatou-e, por meio da média e do intervalo de confiança, que o tempo de rede é o que aparenta ser mais custoso para o sistema. Essa métrica pode ter inúmeras variáveis que irão influenciar no seu valor. Portanto, para procurar por uma possível causa dentro do próprio sistema, pode-se observar as combinações dos fatores e procurar por alguma combinação de níveis de um fator x que resulte na mudança brusca de um fator y.
+
+Para isso, agrupou-se os dados por combinação de fatores. Por exemplo, todos as observações que foram coletadas fazendo-se 200 requisições em conjunto, com 10 respostas esperadas e 1000 caroans criadas. E assim por diante. 
+
+Vale salientar que os grupos possuem um ID que foi criado para uma interpretação rápida sobre qual grupo está sendo visualizado. O ID consiste da soma dos níveis dos fatores. No exemplo dado acima, o grupo seria identificado por 1210.
+
+Ao fim desse processo, obteve-se 8 grupos (todas as combinações possíveis). E, com isso, foi gerado um gráfico, no qual cada ponto representa a média para o grupo e cada margem de erro o intervalo de confiança, também para o grupo.
+
+```{r echo=FALSE}
+
+mean <- d %>% group_by(group) %>% 
+              summarise(N = length(real_net_time), media = mean(real_net_time), sd = sd(real_net_time), se = sd/sqrt(N))
+
+ggplot(mean, aes(x = as.factor(group), y = media)) + geom_point()+ geom_errorbar(aes(ymax = media +qnorm(0.975)*se, ymin = media - qnorm(0.975)*se))
+
+```
+
+
+Esse gráfico mostra que o tempo de rede com apenas 1 requisição por vez não passou de 1 segundo, nesta coleta. Além disso, os intervalos de confiança em 3 deles se mostraram pequenos, o que indica pouca variação nos dados. Apenas o grupo formado pela tripla (1, 10, 100), ou seja, 1 requsição em conjunto, 10 respostas esperadas e 100 caronas existentes, mostrou um intervalo de confiança relativamente extenso.
+
+No entanto, é notório que o tempo de rede aumenta drásticamente quando o número de requisições aumenta, o que é esperado. Isso fica claro no gráfico quando os grupos com 200 requisições se distanciam dos grupos com apenas 1. Porém observa-se que o outros dois fatores também podem exercer alguma influência.
+
+Ao observar o grupo 310, percebe-se que, mesmo tendo 200 requisições simultâneas, este ainda continua com tempo de rede médio menor que 1 segundo e seu intervalo de confiança confirma isso. O mesmo não ocorre nos grupos 400, 1210 e 1300. Uma característica comum a esses grupos é a grande quantidade de dados envolvida nas operações. O grupo 400 possui apenas 100 caronas criadas, porém espera que 100 sejam retornadas. O grupo 1210 requer apenas 10 caronas, porém existem 1000 caronas criadas. E, por fim, o grupo 1300 é o que possoui a maior quantidade de recursos, requer 100 respostas e possui 1000 caronas criadas.
+
+Esses são indícios (que devem ser melhor estudados) de que o tempo de rede está ligado tanto a quantidade de requisições feitas simultaneamente, quanto a quantidade de recursos envolvidos na operação.
+
+# Tempo de processamento
+
+
+
+```{r echo=FALSE}
+
+mean <- d %>% group_by(group) %>% 
+              summarise(N = length(process_time), media = mean(process_time), sd = sd(process_time), se = sd/sqrt(N))
+
+ggplot(mean, aes(x = as.factor(group), y = media)) + geom_point()+ geom_errorbar(aes(ymax = media +qnorm(0.975)*se, ymin = media - qnorm(0.975)*se))
+
+```
+
+
+# Tempo de banco de dados
+
+
+```{r echo=FALSE}
+
+mean <- d %>% group_by(group) %>% 
+              summarise(N = length(bd_time), media = mean(bd_time), sd = sd(bd_time), se = sd/sqrt(N))
+
+ggplot(mean, aes(x = as.factor(group), y = media)) + geom_point()+ geom_errorbar(aes(ymax = media +qnorm(0.975)*se, ymin = media - qnorm(0.975)*se))
+
+```
+
