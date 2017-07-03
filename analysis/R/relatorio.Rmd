@@ -189,3 +189,10 @@ Como era de se esperar, por se tratar das operações no banco de dados do siste
 Nessa métrica, os grupos foram divididos em duas partes. Os grupos de ID 1-100-1000, 1-100-100, 200-10-100 e 200-100-100, todos possuindo 100 caronas existentes, apresentam uma média abaixo de 0.01 segundo. Em seguida vemos os demais grupos, que possuem 1000 caronas existentes, com média acima de 0.035 segundo. Dentro dessa segunda parte ainda, podemos ver que o número de requisições simultâneas tem maior influência do que na primeira parte, indicando uma interação entre esse fator e o número de caronas registradas.
 
 Tem-se então indícios de que o tempo de banco de dados está diretamente ligado à quantidade de elementos inseridos no banco de dados e mais fracamente ligado à quantidade de requisições feitas.
+
+
+## Conclusão
+
+Diante do exposto, foi observado que as métricas tempo de processamento e tempo de banco de dados se comportaram como o esperado. Estes tiveram respostas sempre abaixo de 1 segundo. Além disso, seu comportamento se mostrou como o esperado. Por exemplo: no banco de dados, quanto maior a quantidade de caronas criadas, maior a média de tempo de resposta. Todavia, é notório que a quantidade de requisições influencia demasiadamente o desempenho.
+
+Ademais, o tempo de rede se comportou de uma forma totalmente inesperada. Com resultados que beiram os 30 segundos. Uma explicação plausível para essa catástrofe pode ser que a rede possui diversos fatores que estão além do escopo deste experimento. Como o tráfego em rede pode ser afetado pela quantidade de usuários usando-a simultaneamente em uma certa hora do dia, esse pode ser um fator não contemplado aqui, mas que pode ser testado em outro experimento. Outra fonte de demora pode ser o próprio servidor, já que o sistema está hospedado através de uma conta grátis, que pode ter seu desempenho restringido. Também não pode-se destacar que o framework utilizado não está se comportando bem com uma alta quantidade de requisições.
