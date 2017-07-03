@@ -58,10 +58,11 @@ def gen_ride(query=None):
     }
 
 
-output = open('out2.csv', 'a')
-#output.write('queries,results,rides,net_time,process_time,bd_time\n')
+output = open('out.csv', 'w')
+output.write('queries,results,rides,net_time,process_time,bd_time\n')
 
 window = Semaphore(64)
+lock = Lock()
 
 
 class Register(Thread):
@@ -95,6 +96,9 @@ class Search(Thread):
 
             json = r.json()
             stdout.write('.')
+
+            with lock:
+                print net_time
 
             self.result = {
                 'net_time': net_time,
@@ -162,16 +166,18 @@ def run_experiment(queries, results, rides, rep):
         net_time, process_time, bd_time
     ))
 
+    output.flush()
+
 def repeat_experiment(queries, results, rides, reps=50):
     for i in xrange(reps):
         run_experiment(queries, results, rides, i)
 
 
-#repeat_experiment(1, 10, 100)
-#repeat_experiment(1, 10, 1000)
-#repeat_experiment(1, 100, 100)
-#repeat_experiment(1, 100, 1000)
-repeat_experiment(200, 10, 100, 30)
+repeat_experiment(1, 10, 100)
+repeat_experiment(1, 10, 1000)
+repeat_experiment(1, 100, 100)
+repeat_experiment(1, 100, 1000)
+repeat_experiment(200, 10, 100)
 repeat_experiment(200, 10, 1000)
 repeat_experiment(200, 100, 100)
 repeat_experiment(200, 100, 1000)

@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(dplyr)
 library(ggplot2)
 
-d <- read.csv("out.csv") %>%
+d <- read.csv("out2.csv") %>%
   mutate(
     net_time = net_time - (process_time + bd_time),
     process_time = process_time - bd_time,
@@ -135,11 +135,11 @@ ggplot(aes(x = group), data = d) +
 
 Esse gráfico mostra que o tempo de rede com apenas 1 requisição por vez não passou de 1 segundo, nesta coleta. Além disso, os intervalos de confiança em 3 deles se mostraram pequenos, o que indica pouca variação nos dados. Apenas o grupo 1-10-100 mostrou um intervalo de confiança relativamente extenso, consequência de uma observação muito acima da média.
 
-No entanto, é notório que o tempo de rede aumenta drásticamente quando o número de requisições aumenta, o que é esperado. Isso fica claro no gráfico quando os grupos com 200 requisições se distanciam dos grupos com apenas 1. Porém observa-se que o outros dois fatores também podem exercer alguma influência.
+No entanto, é notório que o tempo de rede aumenta drásticamente quando o número de requisições aumenta, o que é esperado. Isso fica claro no gráfico quando os grupos com 200 requisições se distanciam consideravelmente dos grupos com apenas 1. Porém observa-se que o outros dois fatores também podem exercer alguma influência.
 
-Ao observar o grupo 200-10-100, percebe-se que, mesmo tendo 200 requisições simultâneas, este ainda continua com tempo de rede médio menor que 1 segundo e seu intervalo de confiança confirma isso. O mesmo não ocorre nos demais grupos com a mesma quantidade de requisições. Uma característica comum a estes é a grande quantidade de dados envolvida nas operações. O grupo 200-100-100 possui apenas 100 caronas criadas, porém espera que 100 sejam retornadas. O grupo 200-10-1000 requer apenas 10 caronas, porém existem 1000 caronas criadas. E, por fim, o grupo 200-100-1000 é o que possoui a maior quantidade de recursos, requer 100 respostas e possui 1000 caronas criadas.
+Uma característica comum a estes grupos é a grande quantidade de dados envolvida nas operações. O grupo 200-100-100 possui apenas 100 caronas criadas, porém espera que 100 sejam retornadas. O grupo 200-10-1000 requer apenas 10 caronas, porém existem 1000 caronas criadas. E, por fim, o grupo 200-100-1000 é o que possoui a maior quantidade de recursos, requer 100 respostas e possui 1000 caronas criadas.
 
-Esses são indícios (que devem ser melhor estudados) de que o tempo de rede está ligado tanto a quantidade de requisições feitas simultaneamente, quanto a quantidade de recursos envolvidos na operação.
+Esses são indícios de que o tempo de rede está ligado tanto a quantidade de requisições feitas simultaneamente, quanto a quantidade de recursos envolvidos na operação, havendo um grau de interação entre esses fatores dado que um só se manifesta dependendo do valor do outro.
 
 # Tempo de processamento
 
@@ -159,13 +159,11 @@ ggplot(aes(x = group), data = d) +
   geom_errorbar(aes(ymax = mean+qt(0.975, n-1)*se, ymin = mean-qt(0.975, n-1)*se), data = process)
 ```
 
-O gráfico gerado mostra que, independente do número de requisições em conjunto, os grupos que contém 10 respostas esperadas e 100 caronas existentes foram processados rapidamente (muito abaixo de 0.1 segundo), e seus respectivos intervalos de confiança indicam pouca variação nos dados.
+O gráfico gerado mostra que, independente do número de requisições em conjunto, os grupos que contém 10 respostas esperadas e 100 caronas existentes foram processados rapidamente (abaixo de 0.1 segundo), e seus respectivos intervalos de confiança indicam pouca variação nos dados.
 
-Esse resultado inicial leva a crer que a quantidade de requisições em conjunto tem pouca influência no desempenho da operação, sendo os outros dois fatores decisivos para o tempo de processamento dos dados. A partir da análise dos próximos grupos, veremos se essa hipótese se sustenta.
+Esse resultado inicial leva a crer que a quantidade de requisições em conjunto tem pouca influência no desempenho da operação, sendo os outros dois fatores decisivos para o tempo de processamento dos dados. Entretanto, enquanto a variação entre os dois grupos citados é pequena, em conjunto com outros fatores ela se potencializa, principalmente quando o número de elementos no banco é 1000.
 
-Separando os grupos por ordem de desempenho, percebe-se que pares são formados. Como já citado anteriormente, os grupos com melhor desempenho são 1-10-100 e 200-10-100, em segundo lugar temos 1-10-1000 e 200-10-1000, seguidos por 1-100-100 e 200-100-100, e por fim 1-100-1000 e 200-100-1000. Os grupos pertencentes ao mesmo par diferem apenas no número de requisições em conjunto, o que reforça a ideia desse fator ter pouca influência no processamento dos dados já que seus valores são tão parecidos.
-
-Tem-se então indícios de que o tempo de processamento está ligado à quantidade de recursos envolvidos na operação, sendo a quantidade de respostas retornadas o principal motivo do aumento de tempo.
+Tem-se então indícios de que o tempo de processamento está ligado à quantidade de recursos envolvidos na operação, sendo a quantidade de respostas retornadas o principal motivo do aumento de tempo. Além disso, o número de requisições parece ter influência significativa apenas quando o número de caronas registradas é grande.
 
 # Tempo de banco de dados
 
@@ -184,14 +182,10 @@ bd <- d %>%
 ggplot(aes(x = group), data = d) +
   geom_jitter(aes(y = bd_time), alpha = .05) +
   geom_errorbar(aes(ymax = mean+qt(0.975, n-1)*se, ymin = mean-qt(0.975, n-1)*se), data = bd)
-
-aov(net_time ~ queries + results + rides, d) %>% summary()
-aov(process_time ~ queries + results + rides, d) %>% summary()
-aov(bd_time ~ queries + results + rides, d) %>% summary()
 ```
 
-Como era de se esperar, por se tratar das operações no banco de dados do sistema, o desempenho dos grupos é fortemente influenciado pelo número de caronas existentes, sendo isso nítido no gráfico.
+Como era de se esperar, por se tratar das operações no banco de dados do sistema, o desempenho dos grupos é fortemente influenciado pelo número de caronas existentes, sendo isso nítido no gráfico. Ao mesmo tempo, o número de resultados retornados não parece ter influência.
 
-Nessa métrica, os grupos foram divididos em duas partes. Os grupos de ID 1-100-1000, 1-100-100, 200-10-100 e 200-100-100, todos possuindo 100 caronas existentes, apresentam uma média abaixo de 0.01 segundo. Em seguida vemos os demais grupos, que possuem 1000 caronas existentes, com média acima de 0.035 segundo.
+Nessa métrica, os grupos foram divididos em duas partes. Os grupos de ID 1-100-1000, 1-100-100, 200-10-100 e 200-100-100, todos possuindo 100 caronas existentes, apresentam uma média abaixo de 0.01 segundo. Em seguida vemos os demais grupos, que possuem 1000 caronas existentes, com média acima de 0.035 segundo. Dentro dessa segunda parte ainda, podemos ver que o número de requisições simultâneas tem maior influência do que na primeira parte, indicando uma interação entre esse fator e o número de caronas registradas.
 
-Tem-se então indícios de que o tempo de banco de dados está diretamente ligado à quantidade de recursos envolvidos na operação, sendo o número de caronas registradas no sistema fator de maior peso.
+Tem-se então indícios de que o tempo de banco de dados está diretamente ligado à quantidade de elementos inseridos no banco de dados e mais fracamente ligado à quantidade de requisições feitas.
