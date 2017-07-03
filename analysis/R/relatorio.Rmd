@@ -8,15 +8,17 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 
 library(dplyr)
 library(ggplot2)
 
-d <- read.csv("out.csv")
-
-d <- d %>% mutate(real_net_time = (net_time - bd_time) - process_time, group = queries + results + rides)
-
+d <- read.csv("out.csv") %>%
+  mutate(
+    net_time = net_time - (process_time + bd_time),
+    process_time = process_time - bd_time,
+    group = paste(queries, results, rides, sep='-')
+  )
 ```
 
 ## O objetivo
@@ -25,17 +27,27 @@ Obter estatísticas que descrevam o comportamento do sistema "garupa.com" em con
 
 ## Sobre os dados
 
-Para que seja possível uma compreensão dos dados sem ter que voltar para o planejamento do projeto de medição, este grupo escolheu as métricas: tempo de rede, tempo de processamento e tempo de acesso ao banco de dados. Além disso, existem 3 fatores, com seus respectivos níveis: quantidade de requisições feitas em conjunto(1, 200), quantidade de caronas criadas(100, 1000) e quantidade de respostas desejadas(10, 100).
+Para que seja possível uma compreensão dos dados sem ter que voltar para o planejamento do projeto de medição, foram escolhidas as seguintes métricas sobre o método de filtragem de caronas da API Rest do sistema: tempo de rede, que é o tempo de tráfego da requisição e da resposta mais o tempo de autenticação; tempo de processamento, que é a duração do processamento no back-end depois que os dados já foram recuperados; e tempo de acesso ao banco de dados.
 
-Vale salientar que o fator "quantidade de requsições feitas em conjunto" não foi simulado de forma totalmente condizente com a realidade. Houve a limitação de que a coleta foi feita a partir de um computador e, com isso, não era possível fazer essa quantidade de requisições simultaneamente. Além disso, a API do sistema não aguenta 200 requisições em conjunto (devido ao framework utilizado), por isso as requisições foram enviadas de 50 em 50.
+Além disso, apresentamos os seguintes 3 fatores, com seus respectivos níveis: quantidade de requisições feitas concorrentemente (1, 200); quantidade de caronas presentes no banco de dados (100, 1000); e quantidade de respostas a serem retornadas pela API (10, 100).
+
+Vale salientar que o primeiro fator (quantidade de requsições feitas concorrentemente) não foi simulado de forma totalmente condizente com a realidade. Houve a limitação de que a coleta foi feita a partir de um único computador e, como consequência, não era possível fazer essa quantidade de requisições simultaneamente. Além disso, a API do sistema não aguenta 200 requisições ao mesmo tempo, devido ao framework utilizado. Por isso, foi mantida uma taxa constante de 64 requisições assíncronas enviadas em sequência.
 
 Os dados possuem um total de 1000 observações. Ademais, fazendo-se a separação por combinações de níveis de fatores, temos as seguintes quantidades de observações, para cada combinação:
 
-```{r echo=FALSE}
-a <- d %>% group_by(queries, results, rides) %>% 
-              summarise(quantity = length(net_time))
-a
+```{r}
+d %>%
+  group_by(queries, results, rides) %>% 
+  summarise(repetitions = n())
 ```
+
+## Elaboração dos Experimentos
+
+Para cada uma das repetições mostradas na tabela acima, foi gerada aleatóriamente uma requisição de carona, que é composta de diversos atributos a serem filtrados. Em seguida, o banco de dados é limpo e repopulado com uma quantidade de cópias de uma carona que se adequa ao filtro igual ao fator correspondente ao experimento. O restante das caronas necessárias para preencher o banco são geradas aleatóriamente. Isso garante que o filtro escolhido ou as características das caronas não exerça influência muito forte sobre o resultado das medições.
+
+Então, de modo a evitar que cofatores, como a quantidade de usuários acessando o servidor onde está hospedado o sistema ou o tráfego na rede local, distorcessem o resultados dos experimentos, todos foram executados sequencialmente e no mesmo dia a partir de um script.
+
+Por fim, o resultado de cada experimento foi a média de cada uma das métricas definidas com relação às requisições feitas concorrentemente.
 
 ## Um olhar geral
 
@@ -44,93 +56,142 @@ Para termos uma ideia do desempenho do sistema de forma geral, pode-se calcular 
 Abaixo estão as médias e seus respectivos desvios padrões de cada tempo de resposta:
 
 1) Tempo de rede
-```{r echo=FALSE}
-mean(d$real_net_time)
-sd(d$real_net_time)
+
+```{r}
+cat(
+  "Mean:", mean(d$net_time),
+  "\nStandard Deviation:", sd(d$net_time)
+)
 ```
+
 2) Tempo de processamento
-```{r echo=FALSE}
-mean(d$process_time)
-sd(d$process_time)
+
+```{r}
+cat(
+  "Mean:", mean(d$process_time),
+  "\nStandard Deviation:", sd(d$process_time)
+)
 ```
+
 3) Tempo de banco de dados
-```{r echo=FALSE}
-mean(d$bd_time)
-sd(d$bd_time)
+
+```{r}
+cat(
+  "Mean:", mean(d$bd_time),
+  "\nStandard Deviation:", sd(d$bd_time)
+)
 ```
 
 Dessa forma, observa-se que o tempo de maior duração, em média, é o de rede.
-
 De posse desses dados, pode-se calcular o intervalo de confiança (com 95% de confiança) para cada uma das métricas:
 
 1) Tempo de rede
+
 ```{r}
-t.test(d$real_net_time)
+t.test(d$net_time)
 ```
+
 2) Tempo de processamento
+
 ```{r}
 t.test(d$process_time)
 ```
+
 3) Tempo de banco de dados
+
 ```{r}
 t.test(d$bd_time)
 ```
 
-Logo, com 95% de confiança, pode-se afimar que os valores do tempo de rede, em segundos, estarão em [2.094862, 2.303014]. A conclusão se dá de forma análoga em Tempo de processamento e Tempo de banco de dados. A partir desse instante, toda vez que o intervalo de confiança for mencionado, este será para a média, com 95% de confiança.
+Logo, com 95% de confiança, pode-se afirmar que os valores do tempo de rede, em segundos, estarão em [2.094862, 2.303014]. A conclusão se dá de forma análoga em Tempo de processamento e Tempo de banco de dados. A partir desse instante, toda vez que o intervalo de confiança for mencionado, este será para a média, com 95% de confiança.
 
 # Um olhar por grupos
 
 ## Tempo de rede
 
-Na sessão anterior, constatou-e, por meio da média e do intervalo de confiança, que o tempo de rede é o que aparenta ser mais custoso para o sistema. Essa métrica pode ter inúmeras variáveis que irão influenciar no seu valor. Portanto, para procurar por uma possível causa dentro do próprio sistema, pode-se observar as combinações dos fatores e procurar por alguma combinação de níveis de um fator x que resulte na mudança brusca de um fator y.
+Na sessão anterior, constatou-e, por meio da média e do intervalo de confiança, que o tempo de rede é o que aparenta ser mais custoso para o sistema. Essa métrica pode ter inúmeras variáveis que irão influenciar no seu valor. Portanto, para procurar por uma possível causa dentro do próprio sistema, pode-se observar as combinações dos fatores e procurar por alguma combinação de níveis de um fator x que resulte na mudança brusca de uma métrica y.
 
 Para isso, agrupou-se os dados por combinação de fatores. Por exemplo, todos as observações que foram coletadas fazendo-se 200 requisições em conjunto, com 10 respostas esperadas e 1000 caroans criadas. E assim por diante. 
 
-Vale salientar que os grupos possuem um ID que foi criado para uma interpretação rápida sobre qual grupo está sendo visualizado. O ID consiste da soma dos níveis dos fatores. No exemplo dado acima, o grupo seria identificado por 1210.
+Vale salientar que os grupos possuem um ID que foi criado para uma interpretação rápida sobre qual grupo está sendo visualizado. O ID consiste da concatenação dos níveis dos fatores. No exemplo dado acima, o grupo seria identificado por 200-10-1000.
 
-Ao fim desse processo, obteve-se 8 grupos (todas as combinações possíveis). E, com isso, foi gerado um gráfico, no qual cada ponto representa a média para o grupo e cada margem de erro o intervalo de confiança, também para o grupo.
+Ao fim desse processo, obteve-se 8 grupos (todas as combinações possíveis). E, com isso, foi gerado um gráfico, no qual cada ponto representa a média de uma observação do grupo e cada margem de erro seu intervalo de confiança.
 
-```{r echo=FALSE}
+```{r}
+net <- d %>%
+  group_by(group) %>% 
+  summarise(
+    n = n(),
+    mean = mean(net_time),
+    sd = sd(net_time),
+    se = sd/sqrt(n)
+  )
 
-mean <- d %>% group_by(group) %>% 
-              summarise(N = length(real_net_time), media = mean(real_net_time), sd = sd(real_net_time), se = sd/sqrt(N))
-
-ggplot(mean, aes(x = as.factor(group), y = media)) + geom_point()+ geom_errorbar(aes(ymax = media +qnorm(0.975)*se, ymin = media - qnorm(0.975)*se))
-
+ggplot(aes(x = group), data = d) +
+  geom_jitter(aes(y = net_time), alpha = .05) +
+  geom_errorbar(aes(ymax = mean+qt(0.975, n-1)*se, ymin = mean-qt(0.975, n-1)*se), data = net)
 ```
 
 
-Esse gráfico mostra que o tempo de rede com apenas 1 requisição por vez não passou de 1 segundo, nesta coleta. Além disso, os intervalos de confiança em 3 deles se mostraram pequenos, o que indica pouca variação nos dados. Apenas o grupo formado pela tripla (1, 10, 100), ou seja, 1 requsição em conjunto, 10 respostas esperadas e 100 caronas existentes, mostrou um intervalo de confiança relativamente extenso.
+Esse gráfico mostra que o tempo de rede com apenas 1 requisição por vez não passou de 1 segundo, nesta coleta. Além disso, os intervalos de confiança em 3 deles se mostraram pequenos, o que indica pouca variação nos dados. Apenas o grupo 1-10-100 mostrou um intervalo de confiança relativamente extenso, consequência de uma observação muito acima da média.
 
 No entanto, é notório que o tempo de rede aumenta drásticamente quando o número de requisições aumenta, o que é esperado. Isso fica claro no gráfico quando os grupos com 200 requisições se distanciam dos grupos com apenas 1. Porém observa-se que o outros dois fatores também podem exercer alguma influência.
 
-Ao observar o grupo 310, percebe-se que, mesmo tendo 200 requisições simultâneas, este ainda continua com tempo de rede médio menor que 1 segundo e seu intervalo de confiança confirma isso. O mesmo não ocorre nos grupos 400, 1210 e 1300. Uma característica comum a esses grupos é a grande quantidade de dados envolvida nas operações. O grupo 400 possui apenas 100 caronas criadas, porém espera que 100 sejam retornadas. O grupo 1210 requer apenas 10 caronas, porém existem 1000 caronas criadas. E, por fim, o grupo 1300 é o que possoui a maior quantidade de recursos, requer 100 respostas e possui 1000 caronas criadas.
+Ao observar o grupo 200-10-100, percebe-se que, mesmo tendo 200 requisições simultâneas, este ainda continua com tempo de rede médio menor que 1 segundo e seu intervalo de confiança confirma isso. O mesmo não ocorre nos demais grupos com a mesma quantidade de requisições. Uma característica comum a estes é a grande quantidade de dados envolvida nas operações. O grupo 200-100-100 possui apenas 100 caronas criadas, porém espera que 100 sejam retornadas. O grupo 200-10-1000 requer apenas 10 caronas, porém existem 1000 caronas criadas. E, por fim, o grupo 200-100-1000 é o que possoui a maior quantidade de recursos, requer 100 respostas e possui 1000 caronas criadas.
 
 Esses são indícios (que devem ser melhor estudados) de que o tempo de rede está ligado tanto a quantidade de requisições feitas simultaneamente, quanto a quantidade de recursos envolvidos na operação.
 
 # Tempo de processamento
 
+Vamos então à análise do tempo de processamento relacionado a cada combinação dos fatores. Utilizando-se dos mesmos grupos obtidos na análise anterior, foi gerado um gráfico para o tempo de processamento.
 
+```{r}
+process <- d %>%
+  group_by(group) %>% 
+  summarise(
+    n = n(),
+    mean = mean(process_time),
+    sd = sd(process_time),
+    se = sd/sqrt(n))
 
-```{r echo=FALSE}
-
-mean <- d %>% group_by(group) %>% 
-              summarise(N = length(process_time), media = mean(process_time), sd = sd(process_time), se = sd/sqrt(N))
-
-ggplot(mean, aes(x = as.factor(group), y = media)) + geom_point()+ geom_errorbar(aes(ymax = media +qnorm(0.975)*se, ymin = media - qnorm(0.975)*se))
-
+ggplot(aes(x = group), data = d) +
+  geom_jitter(aes(y = process_time), alpha = .05) +
+  geom_errorbar(aes(ymax = mean+qt(0.975, n-1)*se, ymin = mean-qt(0.975, n-1)*se), data = process)
 ```
 
+O gráfico gerado mostra que, independente do número de requisições em conjunto, os grupos que contém 10 respostas esperadas e 100 caronas existentes foram processados rapidamente (muito abaixo de 0.1 segundo), e seus respectivos intervalos de confiança indicam pouca variação nos dados.
+
+Esse resultado inicial leva a crer que a quantidade de requisições em conjunto tem pouca influência no desempenho da operação, sendo os outros dois fatores decisivos para o tempo de processamento dos dados. A partir da análise dos próximos grupos, veremos se essa hipótese se sustenta.
+
+Separando os grupos por ordem de desempenho, percebe-se que pares são formados. Como já citado anteriormente, os grupos com melhor desempenho são 1-10-100 e 200-10-100, em segundo lugar temos 1-10-1000 e 200-10-1000, seguidos por 1-100-100 e 200-100-100, e por fim 1-100-1000 e 200-100-1000. Os grupos pertencentes ao mesmo par diferem apenas no número de requisições em conjunto, o que reforça a ideia desse fator ter pouca influência no processamento dos dados já que seus valores são tão parecidos.
+
+Tem-se então indícios de que o tempo de processamento está ligado à quantidade de recursos envolvidos na operação, sendo a quantidade de respostas retornadas o principal motivo do aumento de tempo.
 
 # Tempo de banco de dados
 
+Por fim, analisa-se o tempo de banco de dados, seguindo o mesmo padrão das análises anteriores.
 
-```{r echo=FALSE}
+```{r}
+bd <- d %>%
+  group_by(group) %>% 
+  summarise(
+    n = n(),
+    mean = mean(bd_time),
+    sd = sd(bd_time),
+    se = sd/sqrt(n)
+  )
 
-mean <- d %>% group_by(group) %>% 
-              summarise(N = length(bd_time), media = mean(bd_time), sd = sd(bd_time), se = sd/sqrt(N))
+ggplot(aes(x = group), data = d) +
+  geom_jitter(aes(y = bd_time), alpha = .05) +
+  geom_errorbar(aes(ymax = mean+qt(0.975, n-1)*se, ymin = mean-qt(0.975, n-1)*se), data = bd)
 
-ggplot(mean, aes(x = as.factor(group), y = media)) + geom_point()+ geom_errorbar(aes(ymax = media +qnorm(0.975)*se, ymin = media - qnorm(0.975)*se))
-
+aov(net_time ~ queries + results + rides, d) %>% summary()
+aov(process_time ~ queries + results + rides, d) %>% summary()
+aov(bd_time ~ queries + results + rides, d) %>% summary()
 ```
 
+Como era de se esperar, por se tratar das operações no banco de dados do sistema, o desempenho dos grupos é fortemente influenciado pelo número de caronas existentes, sendo isso nítido no gráfico.
+
+Nessa métrica, os grupos foram divididos em duas partes. Os grupos de ID 1-100-1000, 1-100-100, 200-10-100 e 200-100-100, todos possuindo 100 caronas existentes, apresentam uma média abaixo de 0.01 segundo. Em seguida vemos os demais grupos, que possuem 1000 caronas existentes, com média acima de 0.035 segundo.
+
+Tem-se então indícios de que o tempo de banco de dados está diretamente ligado à quantidade de recursos envolvidos na operação, sendo o número de caronas registradas no sistema fator de maior peso.

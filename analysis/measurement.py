@@ -25,7 +25,7 @@ district = [
 
 dest = ['UFCG', 'HOME']
 weekly = [True, False]
-date = [1498800000000, 1498900000000]
+date = [int(time()*1000) + 1*60*60, int(time()*1000) + 2*60*60]
 
 
 def gen_query(limit=10):
@@ -58,11 +58,10 @@ def gen_ride(query=None):
     }
 
 
-output = open('out.csv', 'w')
-output.write('queries,results,rides,net_time,process_time,bd_time\n')
+output = open('out2.csv', 'a')
+#output.write('queries,results,rides,net_time,process_time,bd_time\n')
 
 window = Semaphore(64)
-lock = Lock()
 
 
 class Register(Thread):
@@ -72,33 +71,39 @@ class Register(Thread):
         self.ride = ride
 
     def run(self):
-        r, delta = self.user.request('POST', '/api/rides', json=self.ride)
-        stdout.write('.' if r.status_code is 200 else 'x')
+        try:
+            r, delta = self.user.request('POST', '/api/rides', json=self.ride)
+
+            if r.status_code is not 200:
+                raise Exception
+            stdout.write('.')
+
+        except:
+            stdout.write('x')
         window.release()
 
 class Search(Thread):
-    def __init__(self, user, query, queries, results, rides):
+    def __init__(self, user, query):
         Thread.__init__(self)
         self.user = user
         self.query = query
-
-        self.queries = queries
-        self.results = results
-        self.rides = rides
+        self.result = None
 
     def run(self):
-        r, delta = self.user.request('GET', '/api/rides', params=self.query)
-        stdout.write('.' if r.status_code is 200 else 'x')
+        try:
+            r, net_time = self.user.request('GET', '/api/rides', params=self.query)
 
-        if r.status_code == 200:
             json = r.json()
+            stdout.write('.')
 
-            with lock:
-                output.write('%d,%d,%d,%s,%s,%s\n' % (
-                    self.queries, self.results, self.rides,
-                    str(delta), str(json['process_time']), str(json['bd_time'])
-                ))
+            self.result = {
+                'net_time': net_time,
+                'process_time': json['process_time'],
+                'bd_time': json['bd_time']
+            }
 
+        except:
+            stdout.write('x')
         window.release()
 
 def execute(threads):
@@ -139,24 +144,36 @@ def run_experiment(queries, results, rides, rep):
     threads = []
 
     for i in xrange(queries):
-        t = Search(passenger, query, queries, results, rides)
+        t = Search(passenger, query)
         threads.append(t)
 
     execute(threads)
     stdout.write('\n')
 
-def repeat_experiment(queries, results, rides, reps=1):
+    def avg(x):
+        return sum(t.result[x] for t in threads if t.result is not None) / queries
+
+    net_time = avg('net_time')
+    process_time = avg('process_time')
+    bd_time = avg('bd_time')
+
+    output.write('%d,%d,%d,%s,%s,%s\n' % (
+        queries, results, rides,
+        net_time, process_time, bd_time
+    ))
+
+def repeat_experiment(queries, results, rides, reps=50):
     for i in xrange(reps):
         run_experiment(queries, results, rides, i)
 
 
-repeat_experiment(1, 10, 100, 50)
-repeat_experiment(1, 10, 1000, 50)
-repeat_experiment(1, 100, 100, 50)
-repeat_experiment(1, 100, 1000, 50)
-repeat_experiment(200, 10, 100, 1)
-repeat_experiment(200, 10, 1000, 1)
-repeat_experiment(200, 100, 100, 1)
-repeat_experiment(200, 100, 1000, 1)
+#repeat_experiment(1, 10, 100)
+#repeat_experiment(1, 10, 1000)
+#repeat_experiment(1, 100, 100)
+#repeat_experiment(1, 100, 1000)
+repeat_experiment(200, 10, 100, 30)
+repeat_experiment(200, 10, 1000)
+repeat_experiment(200, 100, 100)
+repeat_experiment(200, 100, 1000)
 
 output.close()
