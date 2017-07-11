@@ -1,0 +1,100 @@
+u: ClientServer at 80.0: Tipo de evento: Chegada, Momento do evento: 80.0
+u: ClientServer at 80.0: Elementos na Fila 1: []
+u: ClientServer at 80.0: Elementos na Fila 2: []
+u: ClientServer at 80.0: Elemento no serviço: Client 3
+u: ClientServer at 80.0: 
+u: ClientServer at 130.0: Tipo de evento: Chegada, Momento do evento: 130.0
+u: ClientServer at 130.0: Elementos na Fila 1: []
+u: ClientServer at 130.0: Elementos na Fila 2: [Client 4]
+u: ClientServer at 130.0: Elemento no serviço: Client 3
+u: ClientServer at 130.0: 
+u: ClientServer at 180.0: Tipo de evento: Chegada, Momento do evento: 180.0
+u: ClientServer at 180.0: Elementos na Fila 1: [Client 5]
+u: ClientServer at 180.0: Elementos na Fila 2: [Client 4]
+u: ClientServer at 180.0: Elemento no serviço: Client 3
+u: ClientServer at 180.0: 
+u: ClientServer at 230.0: Tipo de evento: Saída, Momento do evento: 230.0
+u: ClientServer at 230.0: Elementos na Fila 1: []
+u: ClientServer at 230.0: Elementos na Fila 2: [Client 4]
+u: ClientServer at 230.0: Elemento no serviço: Client 5
+u: ClientServer at 230.0: 
+u: ClientServer at 280.0: Tipo de evento: Chegada, Momento do evento: 280.0
+u: ClientServer at 280.0: Elementos na Fila 1: []
+u: ClientServer at 280.0: Elementos na Fila 2: [Client 4, Client 6]
+u: ClientServer at 280.0: Elemento no serviço: Client 5
+u: ClientServer at 280.0: 
+u: ClientServer at 330.0: Tipo de evento: Chegada, Momento do evento: 330.0
+u: ClientServer at 330.0: Elementos na Fila 1: [Client 7]
+u: ClientServer at 330.0: Elementos na Fila 2: [Client 4, Client 6]
+u: ClientServer at 330.0: Elemento no serviço: Client 5
+u: ClientServer at 330.0: 
+u: ClientServer at 380.0: Tipo de evento: Saída, Momento do evento: 380.0
+u: ClientServer at 380.0: Elementos na Fila 1: []
+u: ClientServer at 380.0: Elementos na Fila 2: [Client 4, Client 6]
+u: ClientServer at 380.0: Elemento no serviço: Client 7
+u: ClientServer at 380.0: 
+u: ClientServer at 430.0: Tipo de evento: Chegada, Momento do evento: 430.0
+u: ClientServer at 430.0: Elementos na Fila 1: []
+u: ClientServer at 430.0: Elementos na Fila 2: [Client 4, Client 6, Client 8]
+u: ClientServer at 430.0: Elemento no serviço: Client 7
+u: ClientServer at 430.0: 
+u: ClientServer at 480.0: Tipo de evento: Chegada, Momento do evento: 480.0
+u: ClientServer at 480.0: Elementos na Fila 1: [Client 9]
+u: ClientServer at 480.0: Elementos na Fila 2: [Client 4, Client 6, Client 8]
+u: ClientServer at 480.0: Elemento no serviço: Client 7
+u: ClientServer at 480.0: 
+u: ClientServer at 530.0: Tipo de evento: Saída, Momento do evento: 530.0
+u: ClientServer at 530.0: Elementos na Fila 1: []
+u: ClientServer at 530.0: Elementos na Fila 2: [Client 4, Client 6, Client 8]
+u: ClientServer at 530.0: Elemento no serviço: Client 9
+u: ClientServer at 530.0: 
+u: ClientServer at 580.0: Tipo de evento: Chegada, Momento do evento: 580.0
+u: ClientServer at 580.0: Elementos na Fila 1: []
+u: ClientServer at 580.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10]
+u: ClientServer at 580.0: Elemento no serviço: Client 9
+u: ClientServer at 580.0: 
+u: ClientServer at 630.0: Tipo de evento: Chegada, Momento do evento: 630.0
+u: ClientServer at 630.0: Elementos na Fila 1: [Client 11]
+u: ClientServer at 630.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10]
+u: ClientServer at 630.0: Elemento no serviço: Client 9
+u: ClientServer at 630.0: 
+u: ClientServer at 680.0: Tipo de evento: Saída, Momento do evento: 680.0
+u: ClientServer at 680.0: Elementos na Fila 1: []
+u: ClientServer at 680.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10]
+u: ClientServer at 680.0: Elemento no serviço: Client 11
+u: ClientServer at 680.0: 
+u: ClientServer at 730.0: Tipo de evento: Chegada, Momento do evento: 730.0
+u: ClientServer at 730.0: Elementos na Fila 1: []
+u: ClientServer at 730.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10, Client 12]
+u: ClientServer at 730.0: Elemento no serviço: Client 11
+u: ClientServer at 730.0: 
+u: ClientServer at 780.0: Tipo de evento: Chegada, Momento do evento: 780.0
+u: ClientServer at 780.0: Elementos na Fila 1: [Client 13]
+u: ClientServer at 780.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10, Client 12]
+u: ClientServer at 780.0: Elemento no serviço: Client 11
+u: ClientServer at 780.0: 
+u: ClientServer at 830.0: Tipo de evento: Saída, Momento do evento: 830.0
+u: ClientServer at 830.0: Elementos na Fila 1: []
+u: ClientServer at 830.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10, Client 12]
+u: ClientServer at 830.0: Elemento no serviço: Client 13
+u: ClientServer at 830.0: 
+u: ClientServer at 880.0: Tipo de evento: Chegada, Momento do evento: 880.0
+u: ClientServer at 880.0: Elementos na Fila 1: []
+u: ClientServer at 880.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10, Client 12, Client 14]
+u: ClientServer at 880.0: Elemento no serviço: Client 13
+u: ClientServer at 880.0: 
+u: ClientServer at 930.0: Tipo de evento: Chegada, Momento do evento: 930.0
+u: ClientServer at 930.0: Elementos na Fila 1: [Client 15]
+u: ClientServer at 930.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10, Client 12, Client 14]
+u: ClientServer at 930.0: Elemento no serviço: Client 13
+u: ClientServer at 930.0: 
+u: ClientServer at 980.0: Tipo de evento: Saída, Momento do evento: 980.0
+u: ClientServer at 980.0: Elementos na Fila 1: []
+u: ClientServer at 980.0: Elementos na Fila 2: [Client 4, Client 6, Client 8, Client 10, Client 12, Client 14]
+u: ClientServer at 980.0: Elemento no serviço: Client 15
+u: ClientServer at 980.0: 
+u: ClientServer at 1000.0: Tipo de evento: Saída, Momento do evento: 1000.0
+u: ClientServer at 1000.0: Elementos na Fila 1: []
+u: ClientServer at 1000.0: Elementos na Fila 2: [Client 6, Client 8, Client 10, Client 12, Client 14]
+u: ClientServer at 1000.0: Elemento no serviço: Client 4
+u: ClientServer at 1000.0: 

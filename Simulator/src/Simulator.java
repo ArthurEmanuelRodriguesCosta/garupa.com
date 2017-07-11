@@ -1,7 +1,9 @@
+import Entities.ClientServer;
+import Entities.Source;
 import eduni.simjava.Sim_system;
 
 public class Simulator {
-	private static double simulationTime = 100000;
+	private static double simulationTime = 1000;
 	
 	public static void main(String[] args) {
 		// Initialise Sim_system
