@@ -1,0 +1,128 @@
+import java.util.Random;
+
+import eduni.simjava.*;
+
+class Source extends Sim_entity {
+	private Sim_port in, in1, out, out1;
+	private double delay;
+	private Random numGen;
+
+	Source(String name, double delay) {
+		super(name);
+		this.delay = delay;
+		numGen = new Random();
+		
+		// Port for receiving new events
+		in = new Sim_port("In");
+		// Port for receiving events from Server
+		in1 = new Sim_port("In1");
+		// Port for creating new events
+		out = new Sim_port("Out");
+		// Port for sending events to Server
+		out1 = new Sim_port("Out1");
+		add_port(in);
+		add_port(in1);
+		add_port(out);
+		add_port(out1);
+	}
+
+	public void body() {
+		boolean simulationStart = true; 
+		
+		while (Sim_system.running()) {
+			if (simulationStart) {
+				//First client of type 1
+				sim_schedule(out, 0.0, 1);
+				//First client of type 2
+				sim_schedule(out, 0.0, 2);
+				
+				simulationStart = false;
+			}
+			
+			Sim_event e = new Sim_event();
+			sim_get_next(e);
+			sim_process(delay);
+			sim_completed(e);
+			
+			if (e.get_tag() == 1) {
+				sim_schedule(out, (numGen.nextInt(10) + 1) * 100, 1);
+				sim_schedule(out1, 0.0, 1);				
+            } 
+			else if (e.get_tag() == 2) {
+				sim_schedule(out, (numGen.nextInt(5) + 1) * 100, 2);
+				sim_schedule(out1, 0.0, 2);
+            }
+			else {
+				sim_schedule(out1, 0.0, 3);
+			}
+		}
+	}
+}
+
+class ClientServer extends Sim_entity {
+	private Sim_port in, out;
+	private double delay;
+	private int queue1, queue2, serverState;
+	private Random numGen;
+	
+	ClientServer(String name, double delay) {
+		super(name);
+		this.delay = delay;
+		queue1 = queue2 = serverState = 0;
+		numGen = new Random();
+		
+		// Port for receiving events from the Scheduler
+		in = new Sim_port("In");
+		// Port for sending events to Scheuler
+		out = new Sim_port("Out");
+		add_port(in);
+		add_port(out);
+	}
+
+	public void body() {
+		while (Sim_system.running()) {
+			Sim_event e = new Sim_event();
+			sim_get_next(e);
+			sim_process(delay);
+			sim_completed(e);
+			
+			if (e.get_tag() == 1) {
+				sim_trace(1, "Tipo de evento: Chegada, Momento do evento: " + Sim_system.clock());
+				
+				if (serverState > 0) queue1++;
+				else {
+					serverState = 1;
+					sim_schedule(out, (numGen.nextInt(5) + 3) * 100, 3);
+				}
+			}
+			else if (e.get_tag() == 2) {
+				sim_trace(1, "Tipo de evento: Chegada, Momento do evento: " + Sim_system.clock());
+				
+				if (serverState > 0) queue2++;
+				else {
+					serverState = 2;
+					sim_schedule(out, (numGen.nextInt(5) + 3) * 100, 3);
+				}
+			}
+			else {
+				sim_trace(1, "Tipo de evento: Saída, Momento do evento: " + Sim_system.clock());
+				
+				if (queue1 > 0) {
+					queue1--;
+					serverState = 1;
+					sim_schedule(out, numGen.nextInt(5) + 3, 3);
+				}
+				else if (queue2 > 0) {
+					queue2--;
+					serverState = 2;
+					sim_schedule(out, numGen.nextInt(5) + 3, 3);
+				}
+				else serverState = 0;
+			}
+			
+			sim_trace(1, "Elementos na Fila 1: " + queue1);
+			sim_trace(1, "Elementos na Fila 2: " + queue2);
+			sim_trace(1, "Elemento no serviço: " + serverState);
+		}
+	}
+}

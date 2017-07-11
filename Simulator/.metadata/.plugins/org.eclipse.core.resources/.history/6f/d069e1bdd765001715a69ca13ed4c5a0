@@ -1,0 +1,26 @@
+import eduni.simjava.Sim_system;
+
+public class Simulator {
+	private const final double simulationTime;
+	
+	Simulator(double time) {
+		simulationTime = time;
+	}
+	
+	public static void main(String[] args) {
+		// Initialise Sim_system
+		Sim_system.initialise();
+		Sim_system.set_termination_condition(Sim_system.EVENTS_COMPLETED, 0, 100, false);
+		// Add the source
+		Source Scheduler = new Source("Source", 50);
+		// Add the Server
+		ClientServer Server = new ClientServer("ClientServer", 30);
+		
+		// Link the entities' ports
+		Sim_system.link_ports("Source", "Out", "Source", "In");
+		Sim_system.link_ports("Source", "Out1", "ClientServer", "In");
+		Sim_system.link_ports("ClientServer", "Out", "Source", "In1");
+		// Run the simulation
+		Sim_system.run();
+	}
+}

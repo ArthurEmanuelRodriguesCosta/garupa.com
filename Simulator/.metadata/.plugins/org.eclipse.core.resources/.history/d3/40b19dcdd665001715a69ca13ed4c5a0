@@ -1,0 +1,20 @@
+import eduni.simjava.Sim_system;
+
+public class ProcessorSubsystem {
+	// The main method
+	public static void main(String[] args) {
+		// Initialise Sim_system
+		Sim_system.initialise();
+		// Add the source
+		Source Scheduler = new Source("Source", 50);
+		// Add the Server
+		ClientServer Server = new ClientServer("ClientServer", 30);
+		
+		// Link the entities' ports
+		Sim_system.link_ports("Source", "Out", "Source", "In");
+		Sim_system.link_ports("Source", "Out1", "ClientServer", "In");
+		Sim_system.link_ports("Processor", "Out2", "Disk2", "In");
+		// Run the simulation
+		Sim_system.run();
+	}
+}
