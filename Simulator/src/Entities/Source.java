@@ -48,12 +48,12 @@ public class Source extends Sim_entity {
 			sim_completed(e);
 			
 			if (e.get_tag() == 1) {
-				sim_schedule(out, numGen.nextInt(10) + 1, 1);
-				sim_schedule(out1, 0.0, 1, "Client " + ClientID++);				
+				sim_schedule(out, numGen.nextInt(10) + 1, 1, "Client " + ClientID++);
+				sim_schedule(out1, 0.0, 1, e.get_data());				
             } 
 			else if (e.get_tag() == 2) {
-				sim_schedule(out, numGen.nextInt(5) + 1, 2);
-				sim_schedule(out1, 0.0, 2, "Client " + ClientID++);
+				sim_schedule(out, numGen.nextInt(5) + 1, 2, "Client " + ClientID++);
+				sim_schedule(out1, 0.0, 2, e.get_data());
             }
 			else {
 				sim_schedule(out1, 0.0, 3);

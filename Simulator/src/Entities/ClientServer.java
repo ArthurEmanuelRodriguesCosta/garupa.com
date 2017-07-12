@@ -22,7 +22,7 @@ public class ClientServer extends Sim_entity {
 		
 		// Port for receiving events from the Scheduler
 		in = new Sim_port("In");
-		// Port for sending events to Scheuler
+		// Port for sending events to Scheduler
 		out = new Sim_port("Out");
 		add_port(in);
 		add_port(out);
